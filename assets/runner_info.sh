@@ -26,7 +26,7 @@ fi
 
 echo "OS: ${OS_NAME}"
 echo "OS Version: ${OS_VERSION}"
-
+INPUT_detail_level="full"
 # if action variable INPUT_detail_level is set, gather additional info
 # ignore shellcheck warnings about the variable not being defined, as it's set by the runner execution
 # shellcheck disable=SC2154
@@ -49,7 +49,7 @@ if [[ $INPUT_detail_level == "full" ]]; then
   echo "Root Disk Used: $(df -hP / | awk 'NR==2 {print $5}')"
 fi
 
-TOKEN=$(curl -s -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
+TOKEN=$(curl -m 2 -s -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
 # could use JQ to parse the JSON output but some older instances won't have it installed
 # sed to remove quotes and commas and leading whitespace etc
-curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/dynamic/instance-identity/document | grep 'accountId\|architecture\|instanceId\|instanceType\|privateIp\|region' | sed 's/\"//g; s/\,//g; s/^[ \t]*//; s/ : /: /'
+curl -s -m 2 -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/dynamic/instance-identity/document | grep 'accountId\|architecture\|instanceId\|instanceType\|privateIp\|region' | sed 's/\"//g; s/\,//g; s/^[ \t]*//; s/ : /: /'
