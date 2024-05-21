@@ -26,7 +26,6 @@ fi
 
 echo "OS: ${OS_NAME}"
 echo "OS Version: ${OS_VERSION}"
-INPUT_detail_level="full"
 # if action variable INPUT_detail_level is set, gather additional info
 # ignore shellcheck warnings about the variable not being defined, as it's set by the runner execution
 # shellcheck disable=SC2154
