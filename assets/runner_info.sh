@@ -1,0 +1,55 @@
+#!/bin/bash
+
+# Get OS name
+OS_NAME=$(grep "PRETTY_NAME=" /etc/os-release | cut -d'"' -f2)
+
+# Get OS Version
+if [[ $OS_NAME == *"Amazon"* ]]; then
+  # Amazon Linux
+  OS_VERSION=$(rpm -q system-release | sed -n 's/system-release-\(.*\)\.amzn2023.noarch/\1/p')
+elif [[ $OS_NAME == *"CentOS"* ]]; then
+  # CentOS
+  OS_VERSION="$(rpm -q --qf "%{VERSION}" "$(rpm -q --whatprovides redhat-release)")"
+elif [[ $OS_NAME == *"Red Hat"* ]]; then
+  # Red Hat
+  OS_VERSION="$(rpm -q --qf "%{VERSION}" "$(rpm -q --whatprovides redhat-release)")"
+elif [[ $OS_NAME == *"Ubuntu"* ]]; then
+  # Ubuntu
+  OS_VERSION=$(lsb_release -r | awk '{print $2}')
+elif [[ $OS_NAME == *"Debian"* ]]; then
+  # Debian
+  OS_VERSION=$(lsb_release -r | awk '{print $2}')
+# Might need to add some more options here if there are any common self-hosted runner OSes out there.
+else
+  OS_VERSION=""
+fi
+
+echo "OS: ${OS_NAME}"
+echo "OS Version: ${OS_VERSION}"
+
+# if action variable INPUT_detail_level is set, gather additional info
+# ignore shellcheck warnings about the variable not being defined, as it's set by the runner execution
+# shellcheck disable=SC2154
+if [[ $INPUT_detail_level == "full" ]]; then
+  echo "Kernel Version: $(uname -r)"
+  echo "OS Hostname: $(hostname)"
+  echo "Runner User: $(whoami)"
+
+  # get free disk % space on runner partition and root partition
+  if pgrep "runsvc.sh" >/dev/null; then
+    # runner is running and we can easily find the disk it's installed on
+    # ignore shellcheck warning as pidof isn't going to get us what we need here
+    # shellcheck disable=SC2009
+    DISK_USED=$(df -hP "$(ps aux | grep -w "[r]unsvc.sh" | awk '{print $12}')" | awk 'NR==2 {print $5}')
+  else
+    # runner is not running, so we'll just default to blank
+    DISK_USED=""
+  fi
+  echo "Runner Disk Used: ${DISK_USED}"
+  echo "Root Disk Used: $(df -hP / | awk 'NR==2 {print $5}')"
+fi
+
+TOKEN=$(curl -s -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
+# could use JQ to parse the JSON output but some older instances won't have it installed
+# sed to remove quotes and commas and leading whitespace etc
+curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/dynamic/instance-identity/document | grep 'accountId\|architecture\|instanceId\|instanceType\|privateIp\|region' | sed 's/\"//g; s/\,//g; s/^[ \t]*//; s/ : /: /'
