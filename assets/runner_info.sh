@@ -28,18 +28,17 @@ fi
 echo "OS: ${OS_NAME}"
 echo "OS Version: ${OS_VERSION}"
 
+# if runner service is running then we can determine installation path and get additional info
+if pgrep "runsvc.sh" >/dev/null; then
+  # runner is running and we can easily find the disk it's installed on
+  # ignore shellcheck warning as pidof isn't going to get us what we need here
+  # shellcheck disable=SC2009
+  RUNNER_PATH="$(dirname "$(ps aux | grep -w "[r]unsvc.sh" | awk '{print $12}')")"
+else
+  # runner is not running, so we'll just default to blank
+  RUNNER_PATH=""
+fi
 
-  # if runner service is running then we can determine installation path and get additional info
-  if pgrep "runsvc.sh" >/dev/null; then
-    # runner is running and we can easily find the disk it's installed on
-    # ignore shellcheck warning as pidof isn't going to get us what we need here
-    # shellcheck disable=SC2009
-    RUNNER_PATH="$(dirname "$(ps aux | grep -w "[r]unsvc.sh" | awk '{print $12}')")"
-  else
-    # runner is not running, so we'll just default to blank
-    RUNNER_PATH=""
-  fi
-  
 
 # if action variable INPUT_detail_level is set, gather additional info
 # ignore shellcheck warnings about the variable not being defined, as it's set by the runner execution
@@ -67,7 +66,7 @@ fi
 
 echo "Runner Version: ${RUNNER_VERSION}"
 
-TOKEN=$(curl -m 2 -s -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
+TOKEN=$(curl -m 1 -s -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
 # could use JQ to parse the JSON output but some older instances won't have it installed
 # sed to remove quotes and commas and leading whitespace etc
-curl -s -m 2 -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/dynamic/instance-identity/document | grep 'accountId\|architecture\|instanceId\|instanceType\|privateIp\|region' | sed 's/\"//g; s/\,//g; s/^[ \t]*//; s/ : /: /'
+curl -s -m 1 -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/dynamic/instance-identity/document | grep 'accountId\|architecture\|instanceId\|instanceType\|privateIp\|region' | sed 's/\"//g; s/\,//g; s/^[ \t]*//; s/ : /: /'
