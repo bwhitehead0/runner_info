@@ -3,6 +3,7 @@
 # Get OS name
 OS_NAME=$(grep "PRETTY_NAME=" /etc/os-release | cut -d'"' -f2)
 
+
 # Get OS Version
 if [[ $OS_NAME == *"Amazon"* ]]; then
   # Amazon Linux
@@ -26,6 +27,20 @@ fi
 
 echo "OS: ${OS_NAME}"
 echo "OS Version: ${OS_VERSION}"
+
+
+  # if runner service is running then we can determine installation path and get additional info
+  if pgrep "runsvc.sh" >/dev/null; then
+    # runner is running and we can easily find the disk it's installed on
+    # ignore shellcheck warning as pidof isn't going to get us what we need here
+    # shellcheck disable=SC2009
+    RUNNER_PATH="$(dirname "$(ps aux | grep -w "[r]unsvc.sh" | awk '{print $12}')")"
+  else
+    # runner is not running, so we'll just default to blank
+    RUNNER_PATH=""
+  fi
+  
+
 # if action variable INPUT_detail_level is set, gather additional info
 # ignore shellcheck warnings about the variable not being defined, as it's set by the runner execution
 # shellcheck disable=SC2154
@@ -33,20 +48,24 @@ if [[ $INPUT_detail_level == "full" ]]; then
   echo "Kernel Version: $(uname -r)"
   echo "OS Hostname: $(hostname)"
   echo "Runner User: $(whoami)"
-
-  # get free disk % space on runner partition and root partition
-  if pgrep "runsvc.sh" >/dev/null; then
-    # runner is running and we can easily find the disk it's installed on
-    # ignore shellcheck warning as pidof isn't going to get us what we need here
-    # shellcheck disable=SC2009
-    DISK_USED=$(df -hP "$(ps aux | grep -w "[r]unsvc.sh" | awk '{print $12}')" | awk 'NR==2 {print $5}')
-  else
-    # runner is not running, so we'll just default to blank
+  if [ -z "${RUNNER_PATH}" ]; then
     DISK_USED=""
+  else
+    DISK_USED=$(df -hP "${RUNNER_PATH}" | awk 'NR==2 {print $5}')
   fi
+  echo "Runner Path: ${RUNNER_PATH}"
   echo "Runner Disk Used: ${DISK_USED}"
   echo "Root Disk Used: $(df -hP / | awk 'NR==2 {print $5}')"
 fi
+
+if [ -z "${RUNNER_PATH}" ]; then
+    # get runner version
+    RUNNER_VERSION=""
+  else
+    RUNNER_VERSION=$("${RUNNER_PATH}"/config.sh --version)
+fi
+
+echo "Runner Version: ${RUNNER_VERSION}"
 
 TOKEN=$(curl -m 2 -s -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
 # could use JQ to parse the JSON output but some older instances won't have it installed
