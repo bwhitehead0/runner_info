@@ -61,7 +61,8 @@ if [ -z "${RUNNER_PATH}" ]; then
     # get runner version
     RUNNER_VERSION=""
   else
-    RUNNER_VERSION=$("${RUNNER_PATH}"/config.sh --version)
+    # need to cd to the runner path to get the version to avoid error output about missing libraries etc, or just use "" in case of other issues getting version
+    RUNNER_VERSION=$( (cd "${RUNNER_PATH}" && ./config.sh --version 2>/dev/null) || echo "" )
 fi
 
 echo "Runner Version: ${RUNNER_VERSION}"
