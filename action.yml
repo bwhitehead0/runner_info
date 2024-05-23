@@ -9,8 +9,11 @@ inputs:
 outputs:
   runner-info:
     description: Runner information.
+    value: ${{ steps.gather-info.outputs.runner_info }}
 runs:
   using: 'composite'
   steps:
-    - run: ${{ github.action_path }}/assets/runner_info.sh
+    - name: Gather runner info
+      id: gather-info
+      run: echo runner_info=${{ github.action_path }}/assets/runner_info.sh >> $GITHUB_OUTPUT
       shell: bash

@@ -1,6 +1,6 @@
 # Runner_Info
 
-GitHub Action to return some diagnostic info about the self-hosted runner executing the workflow.
+GitHub Action to return some diagnostic info about the self-hosted runner in AWS executing the workflow.
 
 v0.1.0 Returns:
 ```
