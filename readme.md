@@ -74,3 +74,4 @@ region: us-east-1
 
 * Return common build tool and language versions (go, node, maven, java, python, gcc, etc)
 * Return other tool versions, which might be used commonly in CI/CD workflows (gitleaks, shellcheck, jq, curl, aws cli, ansible, terraform, etc)
+* Simple JSON output option
