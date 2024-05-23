@@ -21,7 +21,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Gather runner diagnostic info
-        uses: bwhitehead0/runner_info
+        uses: bwhitehead0/runner_info@v1
         with:
           detail_level: short # optional, full or short, default short
       - name: Run ShellCheck
@@ -45,7 +45,7 @@ region: us-east-1
 ```yaml
 ...
       - name: Gather runner diagnostic info
-        uses: bwhitehead0/runner_info
+        uses: bwhitehead0/runner_info@v1
         with:
           detail_level: full # optional, full or short, default short
 ...
