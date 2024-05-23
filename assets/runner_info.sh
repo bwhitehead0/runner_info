@@ -40,10 +40,10 @@ else
 fi
 
 
-# if action variable INPUT_detail-level is set, gather additional info
+# if action variable INPUT_DETAIL_LEVEL is set, gather additional info
 # ignore shellcheck warnings about the variable not being defined, as it's set by the runner execution
 # shellcheck disable=SC2154
-if [[ $INPUT_detail-level == "full" ]]; then
+if [[ ${INPUT_DETAIL_LEVEL} == "full" ]]; then
   echo "Kernel Version: $(uname -r)"
   echo "OS Hostname: $(hostname)"
   echo "Runner User: $(whoami)"

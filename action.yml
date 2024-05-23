@@ -18,3 +18,5 @@ runs:
       # run: echo runner_info=${{ github.action_path }}/assets/runner_info.sh >> $GITHUB_OUTPUT
       run: ${{ github.action_path }}/assets/runner_info.sh
       shell: bash
+      env:
+        INPUT_DETAIL_LEVEL: ${{ inputs.detail-level }}
