@@ -15,5 +15,6 @@ runs:
   steps:
     - name: Gather runner info
       id: gather-info
-      run: echo runner_info=${{ github.action_path }}/assets/runner_info.sh >> $GITHUB_OUTPUT
+      # run: echo runner_info=${{ github.action_path }}/assets/runner_info.sh >> $GITHUB_OUTPUT
+      run: echo runner_info=${{ github.action_path }}/assets/runner_info.sh
       shell: bash
