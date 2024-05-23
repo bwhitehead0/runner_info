@@ -3,7 +3,7 @@ description: Gather diagnostic information about the self hosted Linux runner.
 author: bwhitehead0
 inputs:
   detail-level:
-    description: Detail level of information.
+    description: Detail level of information. (short, full)
     required: false
     default: short
 outputs:
