@@ -39,16 +39,11 @@ else
   RUNNER_PATH=""
 fi
 
-if [ -z "${RI_DETAIL_LEVEL}" ]; then
-  echo "Detail level: unset"
-else
-  echo "Detail level: ${RI_DETAIL_LEVEL}"
-fi
 
-# if action variable RI_DETAIL_LEVEL is set, gather additional info
+# if action variable INPUT_DETAIL_LEVEL is set, gather additional info
 # ignore shellcheck warnings about the variable not being defined, as it's set by the runner execution
 # shellcheck disable=SC2154
-if [[ ${RI_DETAIL_LEVEL} == "full" ]]; then
+if [[ ${INPUT_DETAIL_LEVEL} == "full" ]]; then
   echo "Kernel Version: $(uname -r)"
   echo "OS Hostname: $(hostname)"
   echo "Runner User: $(whoami)"
