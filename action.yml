@@ -19,4 +19,8 @@ runs:
       run: ${{ github.action_path }}/assets/runner_info.sh
       shell: bash
       env:
-        RI_DETAIL_LEVEL: ${{ inputs.detail-level }}
+        INPUT_DETAIL_LEVEL: ${{ inputs.detail-level }}
+
+branding:
+  icon: 'info'
+  color: 'green'
