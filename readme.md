@@ -75,3 +75,6 @@ region: us-east-1
 * Return common build tool and language versions (go, node, maven, java, python, gcc, etc)
 * Return other tool versions, which might be used commonly in CI/CD workflows (gitleaks, shellcheck, jq, curl, aws cli, ansible, terraform, etc)
 * Simple JSON output option
+* Save as job artifact to github
+* User input for cloud provider, return comparable instance details across providers.
+* Accept list of tag key names as input to retrieve from instance metadata endpoint, if available (see [this link](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html#allow-access-to-tags-in-IMDS) for more info)
