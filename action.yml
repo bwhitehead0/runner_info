@@ -20,3 +20,7 @@ runs:
       shell: bash
       env:
         INPUT_DETAIL_LEVEL: ${{ inputs.detail-level }}
+
+branding:
+  icon: 'info'
+  color: 'green'
