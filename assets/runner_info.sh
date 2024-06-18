@@ -69,5 +69,5 @@ echo "Runner Version: ${RUNNER_VERSION}"
 
 TOKEN=$(curl -m 1 -s -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
 # could use JQ to parse the JSON output but some older instances won't have it installed
-# sed to remove quotes and commas and leading whitespace etc
-curl -s -m 1 -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/dynamic/instance-identity/document | grep 'accountId\|architecture\|instanceId\|instanceType\|privateIp\|region' | sed 's/\"//g; s/\,//g; s/^[ \t]*//; s/ : /: /'
+# sed to remove quotes and commas and leading whitespace etc, second sed to format the output
+curl -s -m 1 -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/dynamic/instance-identity/document | grep 'accountId\|architecture\|instanceId\|instanceType\|privateIp\|region' | sed 's/\"//g; s/\,//g; s/^[ \t]*//; s/ : /: /' | sed 's/region/Region/; s/accountId/Account ID/; s/architecture/Architecture/; s/instanceId/Instance ID/; s/instanceType/Instance Type/; s/privateIp/Private IP/'
