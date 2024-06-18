@@ -1,6 +1,6 @@
 # Runner_Info
 
-This action returns diagnostic information about your self-hosted runner running on an AWS EC2 instance.
+This action returns diagnostic information about your self-hosted Linux runner running on an AWS EC2 instance.
 
 ## Examples
 
@@ -32,6 +32,7 @@ Returns:
 ```
 OS: Amazon Linux 2023
 OS Version: 2023.3.20240219-0
+Uptime: 116:02:48:08
 Runner Version: 2.304.0
 accountId: 123412341234
 architecture: arm64
@@ -55,6 +56,7 @@ Returns:
 ```
 OS: Amazon Linux 2023
 OS Version: 2023.3.20240219-0
+Uptime: 116:02:48:08
 Kernel Version: 6.1.77-99.164.amzn2023.aarch64
 OS Hostname: private-runner01
 Runner User: runner-user
@@ -62,12 +64,12 @@ Runner Path: /home/runner-user/actions-runner
 Runner Disk Used: 1%
 Root Disk Used: 7%
 Runner Version: 2.304.0
-accountId: 123412341234
-architecture: arm64
-instanceId: i-123xy54321abcd0z1
-instanceType: m6g.xlarge
-privateIp: 10.16.20.169
-region: us-east-1
+Account ID: 123412341234
+Architecture: arm64
+Instance ID: i-123xy54321abcd0z1
+Instance Type: m6g.xlarge
+Private Ip: 10.16.20.169
+Region: us-east-1
 ```
 
 ## Roadmap

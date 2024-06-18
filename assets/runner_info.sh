@@ -2,7 +2,8 @@
 
 # Get OS name
 OS_NAME=$(grep "PRETTY_NAME=" /etc/os-release | cut -d'"' -f2)
-
+# https://unix.stackexchange.com/a/34033 - get uptime from /proc/uptime in human readable format
+UPTIME=$(awk '{printf("%d:%02d:%02d:%02d\n",($1/60/60/24),($1/60/60%24),($1/60%60),($1%60))}' /proc/uptime)
 
 # Get OS Version
 if [[ $OS_NAME == *"Amazon"* ]]; then
@@ -27,6 +28,7 @@ fi
 
 echo "OS: ${OS_NAME}"
 echo "OS Version: ${OS_VERSION}"
+echo "Uptime: ${UPTIME}"
 
 # if runner service is running then we can determine installation path and get additional info
 if pgrep "runsvc.sh" >/dev/null; then
@@ -69,5 +71,5 @@ echo "Runner Version: ${RUNNER_VERSION}"
 
 TOKEN=$(curl -m 1 -s -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
 # could use JQ to parse the JSON output but some older instances won't have it installed
-# sed to remove quotes and commas and leading whitespace etc
-curl -s -m 1 -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/dynamic/instance-identity/document | grep 'accountId\|architecture\|instanceId\|instanceType\|privateIp\|region' | sed 's/\"//g; s/\,//g; s/^[ \t]*//; s/ : /: /'
+# sed to remove quotes and commas and leading whitespace etc, second sed to format the output
+curl -s -m 1 -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/dynamic/instance-identity/document | grep 'accountId\|architecture\|instanceId\|instanceType\|privateIp\|region' | sed 's/\"//g; s/\,//g; s/^[ \t]*//; s/ : /: /' | sed 's/region/Region/; s/accountId/Account ID/; s/architecture/Architecture/; s/instanceId/Instance ID/; s/instanceType/Instance Type/; s/privateIp/Private IP/'
