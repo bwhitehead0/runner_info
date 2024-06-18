@@ -1,6 +1,6 @@
 # Runner_Info
 
-This action returns diagnostic information about your self-hosted runner running on an AWS EC2 instance.
+This action returns diagnostic information about your self-hosted Linux runner running on an AWS EC2 instance.
 
 ## Examples
 
