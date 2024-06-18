@@ -2,7 +2,8 @@
 
 # Get OS name
 OS_NAME=$(grep "PRETTY_NAME=" /etc/os-release | cut -d'"' -f2)
-
+# https://unix.stackexchange.com/a/34033 - get uptime from /proc/uptime in human readable format
+UPTIME=$(awk '{printf("%d:%02d:%02d:%02d\n",($1/60/60/24),($1/60/60%24),($1/60%60),($1%60))}' /proc/uptime)
 
 # Get OS Version
 if [[ $OS_NAME == *"Amazon"* ]]; then
@@ -27,6 +28,7 @@ fi
 
 echo "OS: ${OS_NAME}"
 echo "OS Version: ${OS_VERSION}"
+echo "Uptime: ${UPTIME}"
 
 # if runner service is running then we can determine installation path and get additional info
 if pgrep "runsvc.sh" >/dev/null; then
