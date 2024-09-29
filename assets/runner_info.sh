@@ -1,5 +1,7 @@
 #!/bin/bash
 
+echo "\$GITHUB_WORKSPACE: $GITHUB_WORKSPACE"
+
 # action version
 VERSION="1.1.0"
 # Get OS name
