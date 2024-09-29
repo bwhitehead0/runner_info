@@ -1,10 +1,7 @@
 #!/bin/bash
 
-echo "\$GITHUB_WORKSPACE: $GITHUB_WORKSPACE"
-echo "from GITHUB_WORKSPACE: ${GITHUB_WORKSPACE%%_work*}"
-
 # action version
-VERSION="1.1.0"
+VERSION="1.1.1"
 # Get OS name
 OS_NAME=$(grep "PRETTY_NAME=" /etc/os-release | cut -d'"' -f2)
 # https://unix.stackexchange.com/a/34033 - get uptime from /proc/uptime in human readable format
