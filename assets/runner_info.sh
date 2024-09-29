@@ -1,6 +1,7 @@
 #!/bin/bash
 
 echo "\$GITHUB_WORKSPACE: $GITHUB_WORKSPACE"
+echo "from GITHUB_WORKSPACE: $(${GITHUB_WORKSPACE%work_*})"
 
 # action version
 VERSION="1.1.0"
