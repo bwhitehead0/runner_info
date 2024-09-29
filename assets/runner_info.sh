@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # action version
-VERSION="1.1.0"
+VERSION="1.1.1"
 # Get OS name
 OS_NAME=$(grep "PRETTY_NAME=" /etc/os-release | cut -d'"' -f2)
 # https://unix.stackexchange.com/a/34033 - get uptime from /proc/uptime in human readable format
@@ -38,7 +38,10 @@ if pgrep "runsvc.sh" >/dev/null; then
   # runner is running and we can easily find the disk it's installed on
   # ignore shellcheck warning as pidof isn't going to get us what we need here
   # shellcheck disable=SC2009
-  RUNNER_PATH="$(dirname "$(ps aux | grep -w "[r]unsvc.sh" | awk '{print $12}')")"
+
+  # replacing with using builtin GITHUB_WORKSPACE variable and parameter expansion to determine path. surrounding if block likely superfluous now.
+  #RUNNER_PATH="$(dirname "$(ps aux | grep -w "[r]unsvc.sh" | awk '{print $12}')")"
+  RUNNER_PATH=${GITHUB_WORKSPACE%%_work*}
 else
   # runner is not running, so we'll just default to blank
   RUNNER_PATH=""
