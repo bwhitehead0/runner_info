@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "\$GITHUB_WORKSPACE: $GITHUB_WORKSPACE"
-folder=${GITHUB_WORKSPACE%work_*}
+folder=${GITHUB_WORKSPACE%_work}
 echo "from GITHUB_WORKSPACE: $folder"
 
 # action version
