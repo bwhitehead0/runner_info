@@ -32,6 +32,7 @@ echo "Action Version: ${VERSION}"
 echo "OS: ${OS_NAME}"
 echo "OS Version: ${OS_VERSION}"
 echo "Uptime: ${UPTIME}"
+echo "Runner Date: $(date +'%Y-%m-%d %H:%M:%S.%9N' )"
 
 # if runner service is running then we can determine installation path and get additional info
 if pgrep "runsvc.sh" >/dev/null; then
