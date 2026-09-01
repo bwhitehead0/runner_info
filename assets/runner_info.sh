@@ -1,11 +1,125 @@
 #!/bin/bash
 
+is_container() {
+    # Docker creates this file
+    [ -f /.dockerenv ] && return 0
+
+    # Podman creates this file
+    [ -f /run/.containerenv ] && return 0
+
+    # Kubernetes pod
+    [ -n "${KUBERNETES_SERVICE_HOST:-}" ] && return 0
+    [ -d /var/run/secrets/kubernetes.io/serviceaccount ] && return 0
+
+    # Root filesystem is overlay (Docker, containerd, k8s)
+    grep -q '^[^ ]* / overlay ' /proc/1/mountinfo 2>/dev/null && return 0
+
+    # cgroup v1/v2: known container-runtime cgroup paths
+    if [ -f /proc/1/cgroup ]; then
+        grep -qE '(kubepods|docker|containerd|cri-containerd|buildkit|ecs|lxc)' /proc/1/cgroup 2>/dev/null && return 0
+    fi
+
+    # systemd-detect-virt if available
+    if command -v systemd-detect-virt >/dev/null 2>&1; then
+        systemd-detect-virt -c >/dev/null 2>&1 && return 0
+    fi
+
+    return 1
+}
+
+get_cpu_count() {
+  # cgroup v2: /sys/fs/cgroup/cpu.max
+  if [ -f /sys/fs/cgroup/cpu.max ]; then
+    read quota period < /sys/fs/cgroup/cpu.max
+    if [ "$quota" != "max" ] && [ "$period" -gt 0 ]; then
+      cpus=$(awk "BEGIN { printf \"%d\", ($quota + $period - 1) / $period }")
+      echo "$cpus"
+      return
+    fi
+  fi
+
+  # cgroup v1: /sys/fs/cgroup/cpu/cpu.cfs_quota_us and cpu.cfs_period_us
+  if [ -f /sys/fs/cgroup/cpu/cpu.cfs_quota_us ] && [ -f /sys/fs/cgroup/cpu/cpu.cfs_period_us ]; then
+    quota=$(cat /sys/fs/cgroup/cpu/cpu.cfs_quota_us)
+    period=$(cat /sys/fs/cgroup/cpu/cpu.cfs_period_us)
+    if [ "$quota" -gt 0 ] && [ "$period" -gt 0 ]; then
+      cpus=$(awk "BEGIN { printf \"%d\", ($quota + $period - 1) / $period }")
+      echo "$cpus"
+      return
+    fi
+  fi
+
+  # Try nproc (common on Linux)
+  if command -v nproc >/dev/null 2>&1; then
+    nproc
+    return
+  fi
+
+  # Try getconf (POSIX, works on many systems)
+  if command -v getconf >/dev/null 2>&1; then
+    getconf _NPROCESSORS_ONLN 2>/dev/null && return
+    getconf NPROCESSORS_ONLN 2>/dev/null && return
+  fi
+
+  # Try sysctl (BSD, macOS)
+  if command -v sysctl >/dev/null 2>&1; then
+    sysctl -n hw.ncpu 2>/dev/null && return
+  fi
+
+  # Fallback: count 'processor' lines in /proc/cpuinfo (Linux)
+  if [ -f /proc/cpuinfo ]; then
+    grep -c ^processor /proc/cpuinfo
+    return
+  fi
+
+  # Fallback: 1 (unknown)
+  echo 1
+}
+
+get_memory_bytes() {
+    # cgroup v2
+    if [ -f /sys/fs/cgroup/memory.max ]; then
+        val=$(cat /sys/fs/cgroup/memory.max)
+        if [ "$val" != "max" ]; then
+            echo "$val"
+            return 0
+        fi
+    fi
+
+    # cgroup v1
+    if [ -f /sys/fs/cgroup/memory/memory.limit_in_bytes ]; then
+        val=$(cat /sys/fs/cgroup/memory/memory.limit_in_bytes)
+        # values near PAGE_COUNTER_MAX mean unlimited
+        if [ "$val" -lt 9000000000000000000 ] 2>/dev/null; then
+            echo "$val"
+            return 0
+        fi
+    fi
+
+    # Fallback: node-level memory
+    awk '/^MemTotal:/ { print $2 * 1024 }' /proc/meminfo
+}
+
+get_memory_available_bytes() {
+  if [ -f /sys/fs/cgroup/memory.max ] && [ -f /sys/fs/cgroup/memory.current ]; then
+    limit=$(cat /sys/fs/cgroup/memory.max)
+    used=$(cat /sys/fs/cgroup/memory.current)
+
+    if [ "$limit" != "max" ]; then
+      awk "BEGIN { print $limit - $used }"
+      return 0
+    fi
+  fi
+}
+
 # action version
-VERSION="1.2.0"
+VERSION="1.3.0"
 # Get OS name
 OS_NAME=$(grep "PRETTY_NAME=" /etc/os-release | cut -d'"' -f2)
 # https://unix.stackexchange.com/a/34033 - get uptime from /proc/uptime in human readable format
 UPTIME=$(awk '{printf("%d:%02d:%02d:%02d\n",($1/60/60/24),($1/60/60%24),($1/60%60),($1%60))}' /proc/uptime)
+
+
 
 # Get OS Version
 if [[ $OS_NAME == *"Amazon"* ]]; then
@@ -28,31 +142,29 @@ else
   OS_VERSION=""
 fi
 
+# determine if this is a container
+if is_container; then
+    OS_TYPE="Container"
+else
+    OS_TYPE="Host"
+fi
+
 echo "Action Version: ${VERSION}"
 echo "OS: ${OS_NAME}"
 echo "OS Version: ${OS_VERSION}"
+echo "OS Type: ${OS_TYPE}"
 echo "Uptime: ${UPTIME}"
 echo "Runner Date: $(date +'%Y-%m-%d %H:%M:%S.%9N' )"
 
-# if runner service is running then we can determine installation path and get additional info
-if pgrep "runsvc.sh" >/dev/null; then
-  # runner is running and we can easily find the disk it's installed on
-  # ignore shellcheck warning as pidof isn't going to get us what we need here
-  # shellcheck disable=SC2009
-
-  # replacing with using builtin GITHUB_WORKSPACE variable and parameter expansion to determine path. surrounding if block likely superfluous now.
-  #RUNNER_PATH="$(dirname "$(ps aux | grep -w "[r]unsvc.sh" | awk '{print $12}')")"
-  RUNNER_PATH=${GITHUB_WORKSPACE%%_work*}
-else
-  # runner is not running, so we'll just default to blank
-  RUNNER_PATH=""
-fi
-
+RUNNER_PATH=${GITHUB_WORKSPACE%%_work*}
 
 # if action variable INPUT_DETAIL_LEVEL is set, gather additional info
 # ignore shellcheck warnings about the variable not being defined, as it's set by the runner execution
 # shellcheck disable=SC2154
 if [[ ${INPUT_DETAIL_LEVEL} == "full" ]]; then
+  # Get memory and convert to human readable format
+  MEMORY_GB=$(get_memory_bytes | awk '{ printf "%.1f GB", $1 / (1024^3) }')
+  MEMORY_AVAILABLE_GB=$(get_memory_available_bytes | awk '{ printf "%.1f GB", $1 / (1024^3) }')
   echo "Kernel Version: $(uname -r)"
   echo "OS Hostname: $(hostname)"
   echo "Runner User: $(whoami)"
@@ -64,14 +176,23 @@ if [[ ${INPUT_DETAIL_LEVEL} == "full" ]]; then
   echo "Runner Path: ${RUNNER_PATH}"
   echo "Runner Disk Used: ${DISK_USED}"
   echo "Root Disk Used: $(df -hP / | awk 'NR==2 {print $5}')"
+  echo "CPU Count: $(get_cpu_count)"
+  echo "Memory: ${MEMORY_GB}"
+  echo "Free Memory: ${MEMORY_AVAILABLE_GB}"
 fi
 
 if [ -z "${RUNNER_PATH}" ]; then
-    # get runner version
-    RUNNER_VERSION=""
-  else
-    # need to cd to the runner path to get the version to avoid error output about missing libraries etc, or just use "" in case of other issues getting version
-    RUNNER_VERSION=$( (cd "${RUNNER_PATH}" && ./config.sh --version 2>/dev/null) || echo "" )
+  # get runner version
+  RUNNER_VERSION=""
+else
+    # ARC images can emit runner logs on stdout; capture only a standalone version
+    RUNNER_VERSION=$( (cd "${RUNNER_PATH}" && ./config.sh --version 2>&1 | awk '
+      /^[[:space:]]*[0-9]+\.[0-9]+\.[0-9]+[[:space:]]*$/ {
+        gsub(/^[[:space:]]+|[[:space:]]+$/, "", $0)
+        print
+        exit
+      }
+    ') || echo "" )
 fi
 
 echo "Runner Version: ${RUNNER_VERSION}"
