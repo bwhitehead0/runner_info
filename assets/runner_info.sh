@@ -100,6 +100,18 @@ get_memory_bytes() {
     awk '/^MemTotal:/ { print $2 * 1024 }' /proc/meminfo
 }
 
+get_memory_available_bytes() {
+  if [ -f /sys/fs/cgroup/memory.max ] && [ -f /sys/fs/cgroup/memory.current ]; then
+    limit=$(cat /sys/fs/cgroup/memory.max)
+    used=$(cat /sys/fs/cgroup/memory.current)
+
+    if [ "$limit" != "max" ]; then
+      awk "BEGIN { print $limit - $used }"
+      return 0
+    fi
+  fi
+}
+
 # action version
 VERSION="1.3.0"
 # Get OS name
@@ -152,6 +164,7 @@ RUNNER_PATH=${GITHUB_WORKSPACE%%_work*}
 if [[ ${INPUT_DETAIL_LEVEL} == "full" ]]; then
   # Get memory and convert to human readable format
   MEMORY_GB=$(get_memory_bytes | awk '{ printf "%.1f GB", $1 / (1024^3) }')
+  MEMORY_AVAILABLE_GB=$(get_memory_available_bytes | awk '{ printf "%.1f GB", $1 / (1024^3) }')
   echo "Kernel Version: $(uname -r)"
   echo "OS Hostname: $(hostname)"
   echo "Runner User: $(whoami)"
@@ -165,14 +178,21 @@ if [[ ${INPUT_DETAIL_LEVEL} == "full" ]]; then
   echo "Root Disk Used: $(df -hP / | awk 'NR==2 {print $5}')"
   echo "CPU Count: $(get_cpu_count)"
   echo "Memory: ${MEMORY_GB}"
+  echo "Free Memory: ${MEMORY_AVAILABLE_GB}"
 fi
 
 if [ -z "${RUNNER_PATH}" ]; then
   # get runner version
   RUNNER_VERSION=""
 else
-  # need to cd to the runner path to get the version to avoid error output about missing libraries etc, or just use "" in case of other issues getting version
-  RUNNER_VERSION=$( (cd "${RUNNER_PATH}" && ./config.sh --version 2>/dev/null) || echo "" )
+    # ARC images can emit runner logs on stdout; capture only a standalone version
+    RUNNER_VERSION=$( (cd "${RUNNER_PATH}" && ./config.sh --version 2>&1 | awk '
+      /^[[:space:]]*[0-9]+\.[0-9]+\.[0-9]+[[:space:]]*$/ {
+        gsub(/^[[:space:]]+|[[:space:]]+$/, "", $0)
+        print
+        exit
+      }
+    ') || echo "" )
 fi
 
 echo "Runner Version: ${RUNNER_VERSION}"
