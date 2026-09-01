@@ -101,7 +101,7 @@ get_memory_bytes() {
 }
 
 # action version
-VERSION="1.2.0"
+VERSION="1.3.0"
 # Get OS name
 OS_NAME=$(grep "PRETTY_NAME=" /etc/os-release | cut -d'"' -f2)
 # https://unix.stackexchange.com/a/34033 - get uptime from /proc/uptime in human readable format
