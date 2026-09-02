@@ -30,7 +30,7 @@ is_container() {
 get_cpu_count() {
   # cgroup v2: /sys/fs/cgroup/cpu.max
   if [ -f /sys/fs/cgroup/cpu.max ]; then
-    read quota period < /sys/fs/cgroup/cpu.max
+    read -r quota period < /sys/fs/cgroup/cpu.max
     if [ "$quota" != "max" ] && [ "$period" -gt 0 ]; then
       cpus=$(awk "BEGIN { printf \"%d\", ($quota + $period - 1) / $period }")
       echo "$cpus"
